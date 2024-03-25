@@ -1,0 +1,72 @@
+﻿@using System.Net.Http
+
+@page "/stock"
+
+<h1>NVIDIA (NVDA) Stock Information</h1>
+
+<div id="loading" @if="isLoading">Loading...</div>
+
+<div @if="!isLoading">
+    <p>Symbol: @stockData?.Symbol</p>
+    <p>Long Name: @stockData?.LongName</p>
+    <p>Current Price: @stockData?.RegularMarketPrice?.fmt</p>
+    <p>Change: @stockData?.RegularMarketChange?.fmt (@stockData?.RegularMarketChangePercent?.fmt%)</p>
+</div>
+@code {
+    private bool isLoading = true;
+    private NvdaStockData? stockData;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        stockData = null;
+
+        try
+        {
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.Add("x-rapidapi-key", "81c594aa00msh92ed28b973a4984p1187a7jsnd5853be48766"); // Replace with your actual API key
+            client.DefaultRequestHeaders.Add("x-rapidapi-host", "yahoo-finance127.p.rapidapi.com"); // Replace with your actual API key
+
+            var response = await client.GetAsync("https://yahoo-finance127.p.rapidapi.com/search/NVDA");
+            response.EnsureSuccessStatusCode();
+
+            stockData = await response.Content.ReadFromJsonAsync<NvdaStockData>();
+        }
+        catch (Exception ex)
+        {
+            // Handle errors gracefully, e.g., display an error message to the user
+            Console.WriteLine($"Error fetching stock data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public class NvdaStockData
+    {
+        public string Symbol { get; set; }
+        public string LongName { get; set; }
+        public RegularMarketPrice RegularMarketPrice { get; set; }
+        public RegularMarketChange RegularMarketChange { get; set; }
+        public RegularMarketChangePercent RegularMarketChangePercent { get; set; }
+    }
+
+    public class RegularMarketPrice
+    {
+        public double raw { get; set; }
+        public string fmt { get; set; }
+    }
+
+    public class RegularMarketChange
+    {
+        public double raw { get; set; }
+        public string fmt { get; set; }
+    }
+
+    public class RegularMarketChangePercent
+    {
+        public double raw { get; set; }
+        public string fmt { get; set; }
+    }
+}
